@@ -10,8 +10,9 @@ import { useTheme } from '../src/utils/theme';
 export default function TrayChangeScreen() {
   const router = useRouter();
   const { tray } = useLocalSearchParams<{ tray: string }>();
-  const { user, updateProfile } = useUserStore();
-  const { addEvent } = useEventStore();
+  const user = useUserStore((s) => s.user);
+  const updateProfile = useUserStore((s) => s.updateProfile);
+  const addEvent = useEventStore((s) => s.addEvent);
   const { colors } = useTheme(user?.themePreference);
 
   const newTray = parseInt(tray || '0') || (user ? user.currentTray + 1 : 1);
@@ -29,6 +30,14 @@ export default function TrayChangeScreen() {
     router.back();
   };
 
+  const handleSnooze = async () => {
+    if (!user) return;
+    // Reschedule the notification for 1 hour from now
+    const snoozeTime = new Date(Date.now() + 60 * 60 * 1000);
+    await scheduleTrayChangeReminder(snoozeTime, newTray, user.trayChangeTime);
+    router.back();
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={styles.emoji}>🦷</Text>
@@ -41,7 +50,7 @@ export default function TrayChangeScreen() {
         <Text style={styles.confirmBtnText}>Confirm: Switched to tray {newTray}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.snoozeBtn, { borderColor: colors.inputBorder }]} onPress={() => router.back()}>
+      <TouchableOpacity style={[styles.snoozeBtn, { borderColor: colors.inputBorder }]} onPress={handleSnooze}>
         <Text style={[styles.snoozeBtnText, { color: colors.textSecondary }]}>Snooze 1 hour</Text>
       </TouchableOpacity>
     </View>

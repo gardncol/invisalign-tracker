@@ -16,21 +16,28 @@ interface EventState {
   removeEvent: (eventId: number) => Promise<void>;
 }
 
+async function refreshEvents(set: (partial: Partial<EventState>) => void) {
+  const today = new Date();
+  const events = await getEventsForDate(today);
+  const latest = await getLatestEvent();
+  set({ todaysEvents: events, latestEvent: latest, loading: false });
+}
+
 export const useEventStore = create<EventState>((set) => ({
   todaysEvents: [],
   latestEvent: null,
   loading: true,
 
   loadTodaysEvents: async () => {
-    const today = new Date();
-    const events = await getEventsForDate(today);
-    const latest = await getLatestEvent();
-    set({ todaysEvents: events, latestEvent: latest, loading: false });
+    await refreshEvents(set);
   },
 
   addEvent: async (type, timestamp = new Date(), trayNumber) => {
     await createEvent({ type, timestamp, trayNumber });
-    await useEventStore.getState().loadTodaysEvents();
+    // Defer the store refresh to avoid triggering a re-render during the current render cycle
+    queueMicrotask(() => {
+      refreshEvents(set);
+    });
   },
 
   refreshLatest: async () => {
@@ -48,11 +55,15 @@ export const useEventStore = create<EventState>((set) => ({
 
   editEventTimestamp: async (eventId, newTimestamp) => {
     await updateEventTimestamp(eventId, newTimestamp);
-    await useEventStore.getState().loadTodaysEvents();
+    queueMicrotask(() => {
+      refreshEvents(set);
+    });
   },
 
   removeEvent: async (eventId) => {
     await deleteEvent(eventId);
-    await useEventStore.getState().loadTodaysEvents();
+    queueMicrotask(() => {
+      refreshEvents(set);
+    });
   },
 }));

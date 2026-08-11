@@ -5,8 +5,8 @@ import { getDailySummaries } from '../services/reporting';
 import { calculateStreak } from '../services/timeCalculator';
 
 export function useStreak() {
-  const { getEventsForRange } = useEventStore();
-  const { user } = useUserStore();
+  const getEventsForRange = useEventStore((s) => s.getEventsForRange);
+  const user = useUserStore((s) => s.user);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {

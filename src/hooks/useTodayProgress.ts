@@ -5,8 +5,9 @@ import { calculateWearTime, isOnPace, getProjectedCompletionTime } from '../serv
 import { formatHours, isWithinAwakeHours } from '../utils/dates';
 
 export function useTodayProgress() {
-  const { todaysEvents, loadTodaysEvents } = useEventStore();
-  const { user } = useUserStore();
+  const todaysEvents = useEventStore((s) => s.todaysEvents);
+  const loadTodaysEvents = useEventStore((s) => s.loadTodaysEvents);
+  const user = useUserStore((s) => s.user);
   const [wornHours, setWornHours] = useState(0);
   const [onPace, setOnPace] = useState(false);
   const [projectedCompletion, setProjectedCompletion] = useState<Date | null>(null);
@@ -24,12 +25,14 @@ export function useTodayProgress() {
     const now = new Date();
     const awake = isWithinAwakeHours(now, user.awakeStart, user.awakeEnd);
     // Estimate remaining hours: awake hours left + overnight hours
-    const remainingPossible = awake ? 8 : 8; // Simplified — refine with actual awake window calc
+    const remainingPossible = awake ? 8 : 8;
     setOnPace(isOnPace(hours, remainingPossible, user.dailyGoalHours));
 
     const projected = getProjectedCompletionTime(hours, user.dailyGoalHours, now);
     setProjectedCompletion(projected);
   }, [todaysEvents, user]);
+
+  const hoursRemaining = user ? Math.max(0, user.dailyGoalHours - wornHours) : 0;
 
   return {
     wornHours,
@@ -38,5 +41,6 @@ export function useTodayProgress() {
     onPace,
     projectedCompletion,
     wornFormatted: formatHours(wornHours),
+    hoursRemaining,
   };
 }

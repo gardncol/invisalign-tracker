@@ -10,8 +10,8 @@ import { useTheme } from '../../src/utils/theme';
 import type { DaySummary, WeekSummary } from '../../src/types';
 
 export default function ReportsScreen() {
-  const { user } = useUserStore();
-  const { getEventsForRange } = useEventStore();
+  const user = useUserStore((s) => s.user);
+  const getEventsForRange = useEventStore((s) => s.getEventsForRange);
   const { colors } = useTheme(user?.themePreference);
   const [daily, setDaily] = useState<DaySummary[]>([]);
   const [weekly, setWeekly] = useState<WeekSummary[]>([]);
