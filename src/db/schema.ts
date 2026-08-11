@@ -9,9 +9,12 @@ export const users = sqliteTable('users', {
   awakeStart: text('awake_start').notNull().default('07:00'),
   awakeEnd: text('awake_end').notNull().default('22:00'),
   trayChangeTime: text('tray_change_time').notNull().default('22:00'),
+  trayChangeDay: integer('tray_change_day').notNull().default(-1), // -1 = no specific day, 0-6 = Sun-Sat
   notificationsEnabled: integer('notifications_enabled', { mode: 'boolean' }).notNull().default(true),
+  alarmsEnabled: integer('alarms_enabled', { mode: 'boolean' }).notNull().default(true),
   alarmThresholdMinutes: integer('alarm_threshold_minutes').notNull().default(45),
   escalationEnabled: integer('escalation_enabled', { mode: 'boolean' }).notNull().default(true),
+  themePreference: text('theme_preference').notNull().default('system'), // 'light' | 'dark' | 'system'
   isOnboarded: integer('is_onboarded', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),

@@ -14,8 +14,46 @@ export function calculateNextChangeDate(
 }
 
 /**
+ * Calculate the next tray change date accounting for a specific day-of-week preference.
+ * If trayChangeDay is -1, just uses the frequency interval.
+ * If trayChangeDay is 0-6 (Sun-Sat), finds the next occurrence of that day
+ * that is at least changeFrequencyDays away from the last change.
+ */
+export function calculateNextChangeDateWithDay(
+  lastChangeDate: Date,
+  changeFrequencyDays: number,
+  trayChangeDay: number,
+  trayChangeTime: string
+): Date {
+  if (trayChangeDay < 0 || trayChangeDay > 6) {
+    // No specific day — use simple interval
+    return addDays(lastChangeDate, changeFrequencyDays);
+  }
+
+  // Find the next occurrence of the target day-of-week that is >= changeFrequencyDays away
+  const minDate = addDays(lastChangeDate, changeFrequencyDays);
+
+  const candidate = new Date(minDate);
+  const currentDay = candidate.getDay();
+  let diff = trayChangeDay - currentDay;
+  if (diff < 0) diff += 7;
+
+  candidate.setDate(candidate.getDate() + diff);
+
+  // If candidate ended up before minDate (shouldn't happen, but safety check), add a week
+  if (candidate < minDate) {
+    candidate.setDate(candidate.getDate() + 7);
+  }
+
+  // Set the time
+  const [hours, minutes] = trayChangeTime.split(':').map(Number);
+  candidate.setHours(hours, minutes, 0, 0);
+
+  return candidate;
+}
+
+/**
  * Calculate estimated treatment completion date.
- * Based on remaining trays × change frequency, added to today.
  */
 export function calculateEstimatedCompletionDate(
   user: UserProfile,
@@ -57,7 +95,7 @@ export function isTrayChangeDay(
 }
 
 /**
- * Detect if a tray change was missed (scheduled date passed without confirmation).
+ * Detect if a tray change was missed.
  */
 export function isTrayChangeOverdue(
   lastChangeDate: Date,
@@ -65,7 +103,6 @@ export function isTrayChangeOverdue(
   today: Date
 ): boolean {
   const nextChange = calculateNextChangeDate(lastChangeDate, changeFrequencyDays);
-  // Overdue if more than 24 hours past scheduled change time
   const overdueThreshold = new Date(nextChange.getTime() + 24 * 60 * 60 * 1000);
   return today > overdueThreshold;
 }

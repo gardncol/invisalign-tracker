@@ -1,28 +1,29 @@
 import { View, Text, StyleSheet } from 'react-native';
+import type { Theme } from '../utils/theme';
 
 interface ProgressRingProps {
   wornHours: number;
   goalHours: number;
   progressPct: number;
   wornFormatted: string;
+  colors: Theme['colors'];
 }
 
-export function ProgressRing({ wornHours, goalHours, progressPct, wornFormatted }: ProgressRingProps) {
+export function ProgressRing({ wornHours, goalHours, progressPct, wornFormatted, colors }: ProgressRingProps) {
   const metGoal = wornHours >= goalHours;
-  const color = metGoal ? '#34C759' : progressPct >= 75 ? '#FF9500' : '#FF3B30';
+  const color = metGoal ? colors.success : progressPct >= 75 ? colors.warning : colors.danger;
 
   return (
     <View style={styles.container}>
       <View style={[styles.ring, { borderColor: color }]}>
-        <Text style={styles.hoursText}>{wornFormatted}</Text>
-        <Text style={styles.goalText}>of {goalHours}h goal</Text>
+        <Text style={[styles.hoursText, { color: colors.text }]}>{wornFormatted}</Text>
+        <Text style={[styles.goalText, { color: colors.textSecondary }]}>of {goalHours}h goal</Text>
       </View>
-      {metGoal && <Text style={styles.celebrate}>🎉 Goal met!</Text>}
+      {metGoal && <Text style={[styles.celebrate, { color: colors.success }]}>🎉 Goal met!</Text>}
     </View>
   );
 }
 
-// Note: For MVP, this is a simple visual. Replace with Reanimated circular progress in V1.1.
 const styles = StyleSheet.create({
   container: { alignItems: 'center' },
   ring: {
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  hoursText: { fontSize: 32, fontWeight: '800', color: '#1a1a1a' },
-  goalText: { fontSize: 14, color: '#666', marginTop: 4 },
+  hoursText: { fontSize: 32, fontWeight: '800' },
+  goalText: { fontSize: 14, marginTop: 4 },
   celebrate: { fontSize: 18, marginTop: 12, fontWeight: '600' },
 });

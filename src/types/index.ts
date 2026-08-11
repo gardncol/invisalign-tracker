@@ -1,5 +1,7 @@
 export type EventType = 'in' | 'out' | 'tray_change';
 
+export type ThemePreference = 'light' | 'dark' | 'system';
+
 export interface UserProfile {
   id: number;
   totalTrays: number;
@@ -9,9 +11,12 @@ export interface UserProfile {
   awakeStart: string;  // "HH:mm"
   awakeEnd: string;    // "HH:mm"
   trayChangeTime: string;
+  trayChangeDay: number; // -1 = no specific day, 0-6 = Sun-Sat
   notificationsEnabled: boolean;
+  alarmsEnabled: boolean;
   alarmThresholdMinutes: number;
   escalationEnabled: boolean;
+  themePreference: ThemePreference;
   isOnboarded: boolean;
 }
 

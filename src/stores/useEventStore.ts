@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createEvent, getLatestEvent, getEventsForDate, getEventsInRange } from '../db/repositories/eventRepo';
+import { createEvent, getLatestEvent, getEventsForDate, getEventsInRange, updateEventTimestamp, deleteEvent } from '../db/repositories/eventRepo';
 import type { TrayEvent, EventType } from '../types';
 
 interface EventState {
@@ -12,6 +12,8 @@ interface EventState {
   refreshLatest: () => Promise<void>;
   getEventsForDay: (date: Date) => Promise<TrayEvent[]>;
   getEventsForRange: (start: Date, end: Date) => Promise<TrayEvent[]>;
+  editEventTimestamp: (eventId: number, newTimestamp: Date) => Promise<void>;
+  removeEvent: (eventId: number) => Promise<void>;
 }
 
 export const useEventStore = create<EventState>((set) => ({
@@ -42,5 +44,15 @@ export const useEventStore = create<EventState>((set) => ({
 
   getEventsForRange: async (start, end) => {
     return await getEventsInRange(start, end);
+  },
+
+  editEventTimestamp: async (eventId, newTimestamp) => {
+    await updateEventTimestamp(eventId, newTimestamp);
+    await useEventStore.getState().loadTodaysEvents();
+  },
+
+  removeEvent: async (eventId) => {
+    await deleteEvent(eventId);
+    await useEventStore.getState().loadTodaysEvents();
   },
 }));

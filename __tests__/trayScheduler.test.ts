@@ -10,9 +10,12 @@ const mockUser: UserProfile = {
   awakeStart: '07:00',
   awakeEnd: '22:00',
   trayChangeTime: '22:00',
+  trayChangeDay: -1,
   notificationsEnabled: true,
+  alarmsEnabled: true,
   alarmThresholdMinutes: 45,
   escalationEnabled: true,
+  themePreference: 'system',
   isOnboarded: true,
 };
 

@@ -6,11 +6,13 @@ import { getDailySummaries, getWeeklySummaries, getOverallCompliance } from '../
 import { BarChart } from '../../src/components/BarChart';
 import { LineChart } from '../../src/components/LineChart';
 import { formatHours } from '../../src/utils/dates';
+import { useTheme } from '../../src/utils/theme';
 import type { DaySummary, WeekSummary } from '../../src/types';
 
 export default function ReportsScreen() {
   const { user } = useUserStore();
   const { getEventsForRange } = useEventStore();
+  const { colors } = useTheme(user?.themePreference);
   const [daily, setDaily] = useState<DaySummary[]>([]);
   const [weekly, setWeekly] = useState<WeekSummary[]>([]);
   const [compliance, setCompliance] = useState(0);
@@ -41,35 +43,34 @@ export default function ReportsScreen() {
     : 0;
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Reports</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.surfaceAlt }]}>
+      <Text style={[styles.header, { color: colors.text }]}>Reports</Text>
 
-      {/* Summary cards */}
       <View style={styles.cardsRow}>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>This Week Avg</Text>
-          <Text style={styles.cardValue}>{formatHours(avgThisWeek)}</Text>
-          <Text style={styles.cardSub}>/ {user.dailyGoalHours}h goal</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>This Week Avg</Text>
+          <Text style={[styles.cardValue, { color: colors.primary }]}>{formatHours(avgThisWeek)}</Text>
+          <Text style={[styles.cardSub, { color: colors.textTertiary }]}>/ {user.dailyGoalHours}h goal</Text>
         </View>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Compliance</Text>
-          <Text style={styles.cardValue}>{compliance.toFixed(0)}%</Text>
-          <Text style={styles.cardSub}>days meeting goal</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Compliance</Text>
+          <Text style={[styles.cardValue, { color: colors.primary }]}>{compliance.toFixed(0)}%</Text>
+          <Text style={[styles.cardSub, { color: colors.textTertiary }]}>days meeting goal</Text>
         </View>
       </View>
 
-      <BarChart data={daily} goalHours={user.dailyGoalHours} />
-      <LineChart data={weekly} goalHours={user.dailyGoalHours} />
+      <BarChart data={daily} goalHours={user.dailyGoalHours} colors={colors} />
+      <LineChart data={weekly} goalHours={user.dailyGoalHours} colors={colors} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', padding: 16 },
-  header: { fontSize: 28, fontWeight: '800', marginBottom: 16, color: '#1a1a1a' },
+  container: { flex: 1, padding: 16 },
+  header: { fontSize: 28, fontWeight: '800', marginBottom: 16 },
   cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  card: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 16 },
-  cardLabel: { fontSize: 14, color: '#666', marginBottom: 4 },
-  cardValue: { fontSize: 28, fontWeight: '800', color: '#007AFF' },
-  cardSub: { fontSize: 12, color: '#999', marginTop: 4 },
+  card: { flex: 1, borderRadius: 12, padding: 16 },
+  cardLabel: { fontSize: 14, marginBottom: 4 },
+  cardValue: { fontSize: 28, fontWeight: '800' },
+  cardSub: { fontSize: 12, marginTop: 4 },
 });

@@ -6,15 +6,16 @@ import { useUserStore } from '../../src/stores/useUserStore';
 import { useEventStore } from '../../src/stores/useEventStore';
 import { ProgressRing } from '../../src/components/ProgressRing';
 import { WearToggle } from '../../src/components/WearToggle';
-import { TrayProgress } from '../../src/components/TrayProgress';
 import { calculateEstimatedCompletionDate, getTraysRemaining, getTrayProgressPct } from '../../src/services/trayScheduler';
 import { format } from 'date-fns';
+import { useTheme } from '../../src/utils/theme';
 
 export default function HomeScreen() {
   const { state, elapsedMinutes } = useCurrentTrayState();
   const { wornHours, goalHours, progressPct, wornFormatted, onPace, projectedCompletion } = useTodayProgress();
   const { user } = useUserStore();
   const { addEvent, loadTodaysEvents } = useEventStore();
+  const { colors } = useTheme(user?.themePreference);
 
   useEffect(() => {
     loadTodaysEvents();
@@ -28,18 +29,18 @@ export default function HomeScreen() {
   if (!user) return null;
 
   const completionDate = calculateEstimatedCompletionDate(user, new Date());
-  const traysRemaining = getTraysRemaining(user);
   const trayPct = getTrayProgressPct(user);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.dateText}>{format(new Date(), 'EEEE, MMMM d')}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(), 'EEEE, MMMM d')}</Text>
 
       <ProgressRing
         wornHours={wornHours}
         goalHours={goalHours}
         progressPct={progressPct}
         wornFormatted={wornFormatted}
+        colors={colors}
       />
 
       <WearToggle
@@ -49,15 +50,15 @@ export default function HomeScreen() {
       />
 
       {onPace && projectedCompletion && (
-        <Text style={styles.paceText}>
+        <Text style={[styles.paceText, { color: colors.success }]}>
           On pace — goal at {format(projectedCompletion, 'h:mm a')}
         </Text>
       )}
 
       <View style={styles.trayInfo}>
-        <Text style={styles.trayTitle}>Tray {user.currentTray} of {user.totalTrays}</Text>
-        <Text style={styles.traySubtitle}>{trayPct}% complete</Text>
-        <Text style={styles.traySubtitle}>
+        <Text style={[styles.trayTitle, { color: colors.text }]}>Tray {user.currentTray} of {user.totalTrays}</Text>
+        <Text style={[styles.traySubtitle, { color: colors.textSecondary }]}>{trayPct}% complete</Text>
+        <Text style={[styles.traySubtitle, { color: colors.textSecondary }]}>
           Estimated finish: {format(completionDate, 'MMM d, yyyy')}
         </Text>
       </View>
@@ -66,10 +67,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'space-evenly' },
-  dateText: { fontSize: 18, color: '#666', fontWeight: '500' },
-  paceText: { fontSize: 16, color: '#34C759', fontWeight: '600' },
+  container: { flex: 1, padding: 24, alignItems: 'center', justifyContent: 'space-evenly' },
+  dateText: { fontSize: 18, fontWeight: '500' },
+  paceText: { fontSize: 16, fontWeight: '600' },
   trayInfo: { alignItems: 'center' },
-  trayTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
-  traySubtitle: { fontSize: 16, color: '#666', marginTop: 4 },
+  trayTitle: { fontSize: 22, fontWeight: '700' },
+  traySubtitle: { fontSize: 16, marginTop: 4 },
 });
