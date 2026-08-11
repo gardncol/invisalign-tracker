@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCurrentTrayState } from '../../src/hooks/useCurrentTrayState';
 import { useTodayProgress } from '../../src/hooks/useTodayProgress';
 import { useUserStore } from '../../src/stores/useUserStore';
@@ -8,13 +8,14 @@ import { useStreak } from '../../src/hooks/useStreak';
 import { ProgressRing } from '../../src/components/ProgressRing';
 import { WearToggle } from '../../src/components/WearToggle';
 import { TrayProgress } from '../../src/components/TrayProgress';
+import { AlarmPopover } from '../../src/components/AlarmPopover';
 import { calculateEstimatedCompletionDate, getTrayProgressPct } from '../../src/services/trayScheduler';
+import { schedulePutBackInAlarm } from '../../src/services/notifications';
 import { formatHours } from '../../src/utils/dates';
 import { format } from 'date-fns';
 import { useTheme } from '../../src/utils/theme';
 
 export default function HomeScreen() {
-  const todaysEvents = useEventStore((s) => s.todaysEvents);
   const addEvent = useEventStore((s) => s.addEvent);
   const loadTodaysEvents = useEventStore((s) => s.loadTodaysEvents);
   const user = useUserStore((s) => s.user);
@@ -22,14 +23,36 @@ export default function HomeScreen() {
   const { wornHours, goalHours, progressPct, wornFormatted, onPace, projectedCompletion, hoursRemaining } = useTodayProgress();
   const streak = useStreak();
   const { colors } = useTheme(user?.themePreference);
+  const [showAlarmPopover, setShowAlarmPopover] = useState(false);
 
   useEffect(() => {
     loadTodaysEvents();
   }, [loadTodaysEvents]);
 
   const handleToggle = () => {
-    const newType = state === 'in' ? 'out' : 'in';
-    addEvent(newType);
+    if (state === 'unknown') {
+      // Default to "trays in" on first tap
+      addEvent('in');
+    } else if (state === 'in') {
+      // Marking out — show alarm popover
+      setShowAlarmPopover(true);
+    } else {
+      // Marking in
+      addEvent('in');
+    }
+  };
+
+  const handleAlarmConfirm = async (delayMinutes: number) => {
+    // Log the "out" event
+    await addEvent('out');
+
+    // Schedule alarm if delay > 0
+    if (delayMinutes > 0 && user?.alarmsEnabled) {
+      const fireAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+      const minutesOut = Math.round(delayMinutes);
+      const severity = delayMinutes >= 90 ? 'firm' : 'gentle';
+      await schedulePutBackInAlarm(fireAt, severity, minutesOut);
+    }
   };
 
   if (!user) return null;
@@ -89,6 +112,15 @@ export default function HomeScreen() {
           Estimated finish: {format(completionDate, 'MMM d, yyyy')}
         </Text>
       </View>
+
+      {/* Alarm popover — shown when user marks trays out */}
+      <AlarmPopover
+        visible={showAlarmPopover}
+        onClose={() => setShowAlarmPopover(false)}
+        onConfirm={handleAlarmConfirm}
+        thresholdMinutes={user.alarmThresholdMinutes}
+        colors={colors}
+      />
     </View>
   );
 }

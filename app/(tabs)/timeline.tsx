@@ -1,5 +1,6 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEventStore } from '../../src/stores/useEventStore';
 import { useUserStore } from '../../src/stores/useUserStore';
 import { EventItem } from '../../src/components/EventItem';
@@ -11,6 +12,7 @@ import { calculateWearTime } from '../../src/services/timeCalculator';
 import { formatHours } from '../../src/utils/dates';
 
 export default function TimelineScreen() {
+  const todaysEvents = useEventStore((s) => s.todaysEvents);
   const getEventsForDay = useEventStore((s) => s.getEventsForDay);
   const editEventTimestamp = useEventStore((s) => s.editEventTimestamp);
   const removeEvent = useEventStore((s) => s.removeEvent);
@@ -22,7 +24,7 @@ export default function TimelineScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState<EventType>('in');
-  const [addTime, setAddTime] = useState(format(new Date(), 'HH:mm'));
+  const [addTime, setAddTime] = useState(new Date());
 
   const loadEvents = useCallback(async (date: Date) => {
     setLoading(true);
@@ -34,6 +36,16 @@ export default function TimelineScreen() {
   useEffect(() => {
     loadEvents(selectedDate);
   }, [selectedDate, loadEvents]);
+
+  // When viewing today, also re-load whenever the store's todaysEvents changes
+  // (e.g., when user taps the toggle on the Today tab)
+  useEffect(() => {
+    if (isToday(selectedDate)) {
+      // Use the store's todaysEvents directly — they're already loaded and sorted
+      setEvents(todaysEvents);
+      setLoading(false);
+    }
+  }, [todaysEvents, selectedDate]);
 
   const sorted = [...events].sort(
     (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
@@ -52,12 +64,8 @@ export default function TimelineScreen() {
   };
 
   const handleAddEvent = async () => {
-    const [hours, minutes] = addTime.split(':').map(Number);
-    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-      return;
-    }
     const eventDate = new Date(selectedDate);
-    eventDate.setHours(hours, minutes, 0, 0);
+    eventDate.setHours(addTime.getHours(), addTime.getMinutes(), 0, 0);
     await addEvent(addType, eventDate);
     setShowAddModal(false);
     loadEvents(selectedDate);
@@ -91,7 +99,7 @@ export default function TimelineScreen() {
         <TouchableOpacity
           style={[styles.addBtn, { backgroundColor: colors.primary }]}
           onPress={() => {
-            setAddTime(format(new Date(), 'HH:mm'));
+            setAddTime(new Date());
             setShowAddModal(true);
           }}
         >
@@ -119,7 +127,7 @@ export default function TimelineScreen() {
           data={sorted}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
-            <EventItem event={item} onEdit={handleEdit} onDelete={handleDelete} />
+            <EventItem event={item} onEdit={handleEdit} onDelete={handleDelete} colors={colors} />
           )}
           contentContainerStyle={{ paddingBottom: 20 }}
         />
@@ -150,14 +158,14 @@ export default function TimelineScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.modalHint, { color: colors.textTertiary }]}>Time (HH:mm, 24-hour)</Text>
-            <TextInput
-              style={[styles.timeInput, { borderColor: colors.inputBorder, color: colors.text, backgroundColor: colors.background }]}
+            <Text style={[styles.modalHint, { color: colors.textTertiary }]}>Select time</Text>
+            <DateTimePicker
               value={addTime}
-              onChangeText={setAddTime}
-              keyboardType="numeric"
-              placeholder="14:30"
-              placeholderTextColor={colors.textTertiary}
+              mode="time"
+              display="spinner"
+              onChange={(e, selected) => { if (selected) setAddTime(selected); }}
+              textColor={colors.text}
+              style={{ alignSelf: 'center', width: '100%', marginBottom: 16 }}
             />
 
             <View style={styles.modalButtons}>
@@ -196,7 +204,6 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   typeOption: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   typeText: { fontSize: 16, fontWeight: '600' },
-  timeInput: { fontSize: 20, borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 16 },
   modalButtons: { flexDirection: 'row', gap: 12 },
   modalBtn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   modalBtnText: { fontSize: 16, fontWeight: '600' },

@@ -68,11 +68,14 @@ export function getTheme(mode: 'light' | 'dark' | 'system' | undefined): Theme {
   };
 }
 
-export function useTheme(userPreference: 'light' | 'dark' | 'system' = 'system'): Theme {
+export function useTheme(userPreference: 'light' | 'dark' | 'system' | undefined = 'system'): Theme {
+  // useColorScheme may return null on some platforms — default to 'light' in that case
   const systemScheme = useColorScheme();
-  const resolved = userPreference === 'system' || !userPreference
-    ? (systemScheme === 'dark' ? 'dark' : 'light')
-    : userPreference;
+  const resolved = userPreference === 'dark'
+    ? 'dark'
+    : userPreference === 'light'
+    ? 'light'
+    : (systemScheme === 'dark' ? 'dark' : 'light');
   return {
     mode: resolved,
     colors: resolved === 'dark' ? darkTheme : lightTheme,

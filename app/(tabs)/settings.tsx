@@ -7,11 +7,9 @@ import type { UserProfile, ThemePreference } from '../../src/types';
 import { Ionicons } from '@expo/vector-icons';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function SettingsScreen() {
   const { user, updateProfile } = useUserStore();
-  const { colors } = useTheme(user?.themePreference);
   const [goalHours, setGoalHours] = useState(String(user?.dailyGoalHours ?? 22));
   const [awakeStart, setAwakeStart] = useState(user?.awakeStart ?? '07:00');
   const [awakeEnd, setAwakeEnd] = useState(user?.awakeEnd ?? '22:00');
@@ -20,9 +18,15 @@ export default function SettingsScreen() {
   const [notificationsOn, setNotificationsOn] = useState(user?.notificationsEnabled ?? true);
   const [alarmsOn, setAlarmsOn] = useState(user?.alarmsEnabled ?? true);
   const [alarmThreshold, setAlarmThreshold] = useState(String(user?.alarmThresholdMinutes ?? 45));
-  const [themePref, setThemePref] = useState<ThemePreference>(user?.themePreference ?? 'system');
+
+  // Read theme from the store so it updates immediately when we call updateProfile
+  const { colors } = useTheme(user?.themePreference);
 
   if (!user) return null;
+
+  const handleThemeChange = (t: ThemePreference) => {
+    updateProfile({ themePreference: t });
+  };
 
   const handleSave = async () => {
     const updates: Partial<UserProfile> = {
@@ -34,7 +38,6 @@ export default function SettingsScreen() {
       notificationsEnabled: notificationsOn,
       alarmsEnabled: alarmsOn,
       alarmThresholdMinutes: parseInt(alarmThreshold) || 45,
-      themePreference: themePref,
     };
     await updateProfile(updates);
     Alert.alert('Saved', 'Your settings have been updated.');
@@ -53,17 +56,17 @@ export default function SettingsScreen() {
               key={t}
               style={[
                 styles.themeOption,
-                { borderColor: themePref === t ? colors.primary : colors.inputBorder },
-                themePref === t && { backgroundColor: colors.primary + '15' },
+                { borderColor: user.themePreference === t ? colors.primary : colors.inputBorder },
+                user.themePreference === t && { backgroundColor: colors.primary + '15' },
               ]}
-              onPress={() => setThemePref(t)}
+              onPress={() => handleThemeChange(t)}
             >
               <Ionicons
                 name={t === 'system' ? 'phone-portrait' : t === 'light' ? 'sunny' : 'moon'}
                 size={20}
-                color={themePref === t ? colors.primary : colors.textSecondary}
+                color={user.themePreference === t ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.themeText, { color: themePref === t ? colors.primary : colors.textSecondary }]}>
+              <Text style={[styles.themeText, { color: user.themePreference === t ? colors.primary : colors.textSecondary }]}>
                 {t === 'system' ? 'Auto' : t === 'light' ? 'Light' : 'Dark'}
               </Text>
             </TouchableOpacity>

@@ -10,16 +10,19 @@ interface WearToggleProps {
 export function WearToggle({ state, elapsedMinutes, onPress }: WearToggleProps) {
   const isIn = state === 'in';
   const label = isIn ? 'TRAYS IN' : state === 'out' ? 'TRAYS OUT' : 'TAP TO START';
-  const bgColor = isIn ? '#34C759' : '#FF3B30';
+  // Use green for "in", red for "out", blue for "unknown" (first tap = trays in)
+  const bgColor = isIn ? '#34C759' : state === 'out' ? '#FF3B30' : '#007AFF';
   const subtitle = isIn
     ? `${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
-    : elapsedMinutes > 0
+    : state === 'out' && elapsedMinutes > 0
     ? `Out for ${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
+    : state === 'unknown'
+    ? 'Trays will be marked IN'
     : '';
 
   return (
     <TouchableOpacity
-      style={[styles.toggle, { backgroundColor: state === 'unknown' ? '#007AFF' : bgColor }]}
+      style={[styles.toggle, { backgroundColor: bgColor }]}
       onPress={onPress}
       activeOpacity={0.8}
     >

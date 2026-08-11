@@ -14,7 +14,8 @@
         {
           "color": "#ffffff"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "ios": {
       "bundleIdentifier": "com.colingardner.invisalign-tracker",
