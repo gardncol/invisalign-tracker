@@ -1,0 +1,42 @@
+{
+  "name": "invisalign-tracker",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "drizzle-orm": "^0.45.2",
+    "expo": "~57.0.12",
+    "expo-constants": "~57.0.10",
+    "expo-linking": "~57.0.5",
+    "expo-notifications": "~57.0.10",
+    "expo-router": "~57.0.12",
+    "expo-sqlite": "~57.0.1",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-skia": "^0.0.1",
+    "victory-native": "^41.26.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.2.2",
+    "drizzle-kit": "^0.31.10",
+    "jest": "^30.4.2",
+    "jest-expo": "^57.0.4",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "private": true
+}

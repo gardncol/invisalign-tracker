@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Invisalign Tracker",
+    "slug": "invisalign-tracker",
+    "scheme": "invisalign-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#ffffff"
+        }
+      ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.colingardner.invisalign-tracker",
+      "infoPlist": {
+        "CFBundleDisplayName": "Tray Tracker"
+      }
+    },
+    "android": {
+      "package": "com.colingardner.invisaligntracker"
+    }
+  }
+}
