@@ -7,7 +7,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@app/*": ["./app/*"]
-    }
+    },
+    "types": ["jest", "react"]
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }
