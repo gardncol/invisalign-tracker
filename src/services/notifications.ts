@@ -39,6 +39,8 @@ export async function scheduleTrayChangeReminder(
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: trigger,
     },
+    // Use a fixed identifier so cancelNotification() can reliably target it.
+    identifier: NOTIFICATION_IDS.TRAY_CHANGE,
   });
 
   return id;
@@ -77,6 +79,11 @@ export async function schedulePutBackInAlarm(
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: fireAt,
     },
+    // Use a fixed identifier so cancelPutBackInAlarm() can reliably cancel it.
+    // Without this, expo-notifications assigns a random UUID and the cancel
+    // call (which targets NOTIFICATION_IDS.ALARM_THRESHOLD) is a no-op —
+    // the alarm keeps firing even after the user marks trays back in.
+    identifier: NOTIFICATION_IDS.ALARM_THRESHOLD,
   });
 
   return id;
