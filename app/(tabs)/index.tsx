@@ -34,10 +34,7 @@ export default function HomeScreen() {
   }, [loadTodaysEvents]);
 
   const handleToggle = () => {
-    if (state === 'unknown') {
-      // Default to "trays in" on first tap
-      addEvent('in');
-    } else if (state === 'in') {
+    if (state === 'in' || state === 'unknown') {
       // Marking out — show alarm popover
       setAlarmEditMode(false);
       setShowAlarmPopover(true);

@@ -143,24 +143,3 @@ export function setupNotificationResponseListener(
   });
   return subscription;
 }
-
-/**
- * Schedule an overnight prompt asking if trays were out overnight.
- */
-export async function scheduleOvernightPrompt(lastInEventTime: Date): Promise<string | null> {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(8, 0, 0, 0); // 8 AM prompt
-
-  return await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Did you take your trays out last night?',
-      body: `Your last "in" event was at ${lastInEventTime.toLocaleTimeString()}. Tap to correct if needed.`,
-      data: { type: 'overnight_prompt' },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: tomorrow,
-    },
-  });
-}

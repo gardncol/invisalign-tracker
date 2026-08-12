@@ -9,12 +9,13 @@ export function useCurrentTrayState() {
   const [state, setState] = useState<CurrentTrayState>('unknown');
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
-  // Compute state from todaysEvents array — re-runs whenever the array reference changes
+  // Compute state from todaysEvents array — re-runs whenever the array reference changes.
+  // Default to "in" when there are no events (trays are assumed to be in by default).
   useEffect(() => {
     if (todaysEvents.length > 0) {
       setState(getCurrentState(todaysEvents));
     } else {
-      setState('unknown');
+      setState('in');
     }
   }, [todaysEvents]);
 

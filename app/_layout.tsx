@@ -2,7 +2,7 @@ import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { useEffect } from 'react';
 import { useUserStore } from '../src/stores/useUserStore';
 import { initializeDatabase } from '../src/db/client';
-import { configureNotificationHandler, scheduleTrayChangeReminder, schedulePutBackInAlarm, scheduleOvernightPrompt } from '../src/services/notifications';
+import { configureNotificationHandler, scheduleTrayChangeReminder, schedulePutBackInAlarm } from '../src/services/notifications';
 import { calculateNextChangeDateWithDay } from '../src/services/trayScheduler';
 import { getCurrentTrayRecord } from '../src/db/repositories/trayRepo';
 import { getLatestEvent, getEventsForDate } from '../src/db/repositories/eventRepo';
@@ -75,13 +75,8 @@ export default function RootLayout() {
               await schedulePutBackInAlarm(fireAt, severity, minutesOut);
             }
           }
-        } else if (state === 'in') {
-          // Trays are in — schedule morning prompt asking if they stayed in overnight
-          const latest = await getLatestEvent();
-          if (latest) {
-            await scheduleOvernightPrompt(latest.timestamp);
-          }
         }
+        // Trays are assumed to be in by default overnight — no overnight prompt.
       }
     })();
   }, [user?.isOnboarded, user?.notificationsEnabled, user?.alarmsEnabled, user?.changeFrequencyDays, user?.trayChangeTime, user?.currentTray, user?.alarmThresholdMinutes]);

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
 import type { Theme } from '../utils/theme';
 
@@ -24,16 +24,46 @@ const PRESET_DELAYS = [
 export function AlarmPopover({ visible, onClose, onConfirm, onCancelAlarm, thresholdMinutes, colors, editMode = false }: AlarmPopoverProps) {
   const defaultPreset = PRESET_DELAYS.find(d => d.value === thresholdMinutes) ?? PRESET_DELAYS[2];
   const [selected, setSelected] = useState(defaultPreset.value);
+  const [useCustom, setUseCustom] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState('');
 
   // Reset selection when popover opens
   useEffect(() => {
     if (visible) {
-      setSelected(editMode ? thresholdMinutes : (PRESET_DELAYS.find(d => d.value === thresholdMinutes)?.value ?? 45));
+      const presetMatch = PRESET_DELAYS.find(d => d.value === thresholdMinutes);
+      if (editMode && presetMatch) {
+        setSelected(thresholdMinutes);
+        setUseCustom(false);
+      } else if (editMode) {
+        // threshold doesn't match any preset — treat as custom
+        setUseCustom(true);
+        setCustomMinutes(String(thresholdMinutes));
+        setSelected(-1);
+      } else {
+        setSelected(presetMatch?.value ?? 45);
+        setUseCustom(false);
+      }
+      setCustomMinutes('');
     }
   }, [visible, editMode, thresholdMinutes]);
 
+  const handlePresetSelect = (value: number) => {
+    setSelected(value);
+    setUseCustom(false);
+  };
+
+  const handleCustomFocus = () => {
+    setUseCustom(true);
+    setSelected(-1);
+  };
+
   const handleConfirm = () => {
-    onConfirm(selected);
+    if (useCustom) {
+      const mins = parseInt(customMinutes) || 0;
+      onConfirm(mins);
+    } else {
+      onConfirm(selected);
+    }
     onClose();
   };
 
@@ -62,18 +92,37 @@ export function AlarmPopover({ visible, onClose, onConfirm, onCancelAlarm, thres
                 style={[
                   styles.option,
                   {
-                    borderColor: selected === preset.value ? colors.primary : colors.inputBorder,
-                    backgroundColor: selected === preset.value ? colors.primary + '15' : 'transparent',
+                    borderColor: !useCustom && selected === preset.value ? colors.primary : colors.inputBorder,
+                    backgroundColor: !useCustom && selected === preset.value ? colors.primary + '15' : 'transparent',
                   },
                 ]}
-                onPress={() => setSelected(preset.value)}
+                onPress={() => handlePresetSelect(preset.value)}
               >
-                <Text style={[styles.optionText, { color: selected === preset.value ? colors.primary : colors.text }]}>
+                <Text style={[styles.optionText, { color: !useCustom && selected === preset.value ? colors.primary : colors.text }]}>
                   {preset.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Custom duration input */}
+          <Text style={[styles.customLabel, { color: colors.textSecondary }]}>Or set a custom duration (minutes):</Text>
+          <TextInput
+            style={[
+              styles.customInput,
+              {
+                borderColor: useCustom ? colors.primary : colors.inputBorder,
+                color: colors.text,
+                backgroundColor: colors.background,
+              },
+            ]}
+            keyboardType="numeric"
+            value={customMinutes}
+            onChangeText={setCustomMinutes}
+            onFocus={handleCustomFocus}
+            placeholder="e.g., 25"
+            placeholderTextColor={colors.textTertiary}
+          />
 
           <View style={styles.buttons}>
             <TouchableOpacity style={[styles.btn, { borderColor: colors.inputBorder }]} onPress={onClose}>
@@ -99,9 +148,11 @@ const styles = StyleSheet.create({
   content: { borderRadius: 16, padding: 24, width: '100%' },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
   subtitle: { fontSize: 16, marginBottom: 20 },
-  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   option: { borderWidth: 1.5, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16 },
   optionText: { fontSize: 16, fontWeight: '600' },
+  customLabel: { fontSize: 14, marginBottom: 8 },
+  customInput: { fontSize: 16, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 20 },
   buttons: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   btn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center', minWidth: 100 },
   btnText: { fontSize: 16, fontWeight: '600' },

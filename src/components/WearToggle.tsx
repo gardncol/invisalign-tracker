@@ -8,17 +8,13 @@ interface WearToggleProps {
 }
 
 export function WearToggle({ state, elapsedMinutes, onPress }: WearToggleProps) {
-  const isIn = state === 'in';
-  const label = isIn ? 'TRAYS IN' : state === 'out' ? 'TRAYS OUT' : 'TAP TO START';
-  // Use green for "in", red for "out", blue for "unknown" (first tap = trays in)
-  const bgColor = isIn ? '#34C759' : state === 'out' ? '#FF3B30' : '#007AFF';
+  const isIn = state === 'in' || state === 'unknown'; // unknown defaults to "in"
+  const label = isIn ? 'TRAYS IN' : 'TRAYS OUT';
+  // Use green for "in", red for "out"
+  const bgColor = isIn ? '#34C759' : '#FF3B30';
   const subtitle = isIn
     ? `${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
-    : state === 'out' && elapsedMinutes > 0
-    ? `Out for ${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
-    : state === 'unknown'
-    ? 'Trays will be marked IN'
-    : '';
+    : `Out for ${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`;
 
   return (
     <TouchableOpacity

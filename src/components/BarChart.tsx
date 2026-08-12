@@ -9,7 +9,7 @@ interface BarChartProps {
   colors: Theme['colors'];
 }
 
-const WIDTH = Dimensions.get('window').width - 32;
+const WIDTH = Dimensions.get('window').width - 64; // screen - 32 (screen pad) - 32 (container pad)
 const BAR_WIDTH = (WIDTH - 32) / 7 - 4;
 
 export function BarChart({ data, goalHours, colors }: BarChartProps) {

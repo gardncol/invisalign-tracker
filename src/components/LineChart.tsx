@@ -9,15 +9,20 @@ interface LineChartProps {
   colors: Theme['colors'];
 }
 
-const WIDTH = Dimensions.get('window').width - 32;
+// The chart sits inside two layers of 16px padding: the reports screen container
+// and this component's own container. Reserve horizontal margin inside the chart
+// area so the first and last points (and their value labels) don't clip.
+const CHART_WIDTH = Dimensions.get('window').width - 64; // screen - 32 (screen pad) - 32 (container pad)
 const HEIGHT = 200;
+const SIDE_PADDING = 20; // keep points/labels inside the chart bounds
 
 export function LineChart({ data, goalHours, colors }: LineChartProps) {
   const maxHours = Math.max(goalHours, ...data.map((d) => d.avgHoursPerDay), 24);
-  const stepX = data.length > 1 ? WIDTH / (data.length - 1) : 0;
+  const usableWidth = CHART_WIDTH - SIDE_PADDING * 2;
+  const stepX = data.length > 1 ? usableWidth / (data.length - 1) : 0;
 
   const points = data.map((d, i) => ({
-    x: i * stepX,
+    x: SIDE_PADDING + i * stepX,
     y: HEIGHT - (d.avgHoursPerDay / maxHours) * HEIGHT,
     value: d.avgHoursPerDay,
     week: d.weekStart,
@@ -55,10 +60,10 @@ export function LineChart({ data, goalHours, colors }: LineChartProps) {
 const styles = StyleSheet.create({
   container: { padding: 16, borderRadius: 12, marginBottom: 16 },
   title: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  chartArea: { position: 'relative', height: HEIGHT, width: WIDTH, marginBottom: 8 },
+  chartArea: { position: 'relative', height: HEIGHT, width: CHART_WIDTH, marginBottom: 8 },
   goalLine: { position: 'absolute', left: 0, right: 0, height: 1, opacity: 0.4 },
   point: { position: 'absolute', width: 8, height: 8, borderRadius: 4, justifyContent: 'center' },
-  pointValue: { position: 'absolute', fontSize: 10, top: -16, left: -8, width: 40 },
-  xLabels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8 },
+  pointValue: { position: 'absolute', fontSize: 10, top: -16, left: -8, width: 40, textAlign: 'center' },
+  xLabels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: SIDE_PADDING - 8 },
   xLabel: { fontSize: 10 },
 });
