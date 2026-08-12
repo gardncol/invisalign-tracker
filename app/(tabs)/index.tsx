@@ -9,8 +9,9 @@ import { ProgressRing } from '../../src/components/ProgressRing';
 import { WearToggle } from '../../src/components/WearToggle';
 import { TrayProgress } from '../../src/components/TrayProgress';
 import { AlarmPopover } from '../../src/components/AlarmPopover';
+import { TimerCard } from '../../src/components/TimerCard';
 import { calculateEstimatedCompletionDate, getTrayProgressPct } from '../../src/services/trayScheduler';
-import { schedulePutBackInAlarm } from '../../src/services/notifications';
+import { schedulePutBackInAlarm, cancelPutBackInAlarm } from '../../src/services/notifications';
 import { formatHours } from '../../src/utils/dates';
 import { format } from 'date-fns';
 import { useTheme } from '../../src/utils/theme';
@@ -18,12 +19,15 @@ import { useTheme } from '../../src/utils/theme';
 export default function HomeScreen() {
   const addEvent = useEventStore((s) => s.addEvent);
   const loadTodaysEvents = useEventStore((s) => s.loadTodaysEvents);
+  const alarmFireAt = useEventStore((s) => s.alarmFireAt);
+  const setAlarmFireAt = useEventStore((s) => s.setAlarmFireAt);
   const user = useUserStore((s) => s.user);
   const { state, elapsedMinutes } = useCurrentTrayState();
   const { wornHours, goalHours, progressPct, wornFormatted, onPace, projectedCompletion, hoursRemaining } = useTodayProgress();
   const streak = useStreak();
   const { colors } = useTheme(user?.themePreference);
   const [showAlarmPopover, setShowAlarmPopover] = useState(false);
+  const [alarmEditMode, setAlarmEditMode] = useState(false);
 
   useEffect(() => {
     loadTodaysEvents();
@@ -35,24 +39,48 @@ export default function HomeScreen() {
       addEvent('in');
     } else if (state === 'in') {
       // Marking out — show alarm popover
+      setAlarmEditMode(false);
       setShowAlarmPopover(true);
     } else {
-      // Marking in
+      // Marking in — cancel any pending alarm
+      handleCancelAlarm();
       addEvent('in');
     }
   };
 
   const handleAlarmConfirm = async (delayMinutes: number) => {
-    // Log the "out" event
-    await addEvent('out');
+    // If editing an existing alarm, cancel it first
+    if (alarmEditMode) {
+      await cancelPutBackInAlarm();
+    }
+
+    // Log the "out" event only if not already out (edit mode = already out)
+    if (!alarmEditMode) {
+      await addEvent('out');
+    }
 
     // Schedule alarm if delay > 0
     if (delayMinutes > 0 && user?.alarmsEnabled) {
       const fireAt = new Date(Date.now() + delayMinutes * 60 * 1000);
-      const minutesOut = Math.round(delayMinutes);
+      const minutesOut = delayMinutes;
       const severity = delayMinutes >= 90 ? 'firm' : 'gentle';
       await schedulePutBackInAlarm(fireAt, severity, minutesOut);
+      setAlarmFireAt(fireAt);
+    } else {
+      // No alarm — clear it
+      await cancelPutBackInAlarm();
+      setAlarmFireAt(null);
     }
+  };
+
+  const handleCancelAlarm = async () => {
+    await cancelPutBackInAlarm();
+    setAlarmFireAt(null);
+  };
+
+  const handleTimerCardPress = () => {
+    setAlarmEditMode(true);
+    setShowAlarmPopover(true);
   };
 
   if (!user) return null;
@@ -86,6 +114,15 @@ export default function HomeScreen() {
         onPress={handleToggle}
       />
 
+      {/* Alarm timer card — shown when an alarm is pending */}
+      {alarmFireAt && state === 'out' && (
+        <TimerCard
+          alarmFireAt={alarmFireAt}
+          onPress={handleTimerCardPress}
+          colors={colors}
+        />
+      )}
+
       {/* On-pace indicator */}
       {!goalMet && hoursRemaining > 0 && (
         <Text style={[styles.paceText, { color: onPace ? colors.success : colors.warning }]}>
@@ -113,13 +150,15 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Alarm popover — shown when user marks trays out */}
+      {/* Alarm popover — shown when marking out or editing existing alarm */}
       <AlarmPopover
         visible={showAlarmPopover}
         onClose={() => setShowAlarmPopover(false)}
         onConfirm={handleAlarmConfirm}
+        onCancelAlarm={handleCancelAlarm}
         thresholdMinutes={user.alarmThresholdMinutes}
         colors={colors}
+        editMode={alarmEditMode}
       />
     </View>
   );

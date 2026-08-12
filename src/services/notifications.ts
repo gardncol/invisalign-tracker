@@ -45,13 +45,16 @@ export async function scheduleTrayChangeReminder(
 }
 
 /**
- * Schedule an alarm notification for trays out too long.
+ * Schedule a put-back-in alarm. Uses a fixed notification ID so it can be cancelled.
  */
 export async function schedulePutBackInAlarm(
   fireAt: Date,
   severity: 'gentle' | 'firm' | 'urgent',
   minutesOut: number
 ): Promise<string> {
+  // Cancel any existing alarm first
+  await cancelNotification(NOTIFICATION_IDS.ALARM_THRESHOLD);
+
   const titles = {
     gentle: 'Your trays have been out for a while',
     firm: 'You\'re at risk of missing today\'s goal',
@@ -64,7 +67,7 @@ export async function schedulePutBackInAlarm(
     urgent: `You can still hit your goal if you put trays in now.`,
   };
 
-  return await Notifications.scheduleNotificationAsync({
+  const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: titles[severity],
       body: bodies[severity],
@@ -75,6 +78,15 @@ export async function schedulePutBackInAlarm(
       date: fireAt,
     },
   });
+
+  return id;
+}
+
+/**
+ * Cancel the put-back-in alarm (when user marks trays back in).
+ */
+export async function cancelPutBackInAlarm(): Promise<void> {
+  await cancelNotification(NOTIFICATION_IDS.ALARM_THRESHOLD);
 }
 
 /**

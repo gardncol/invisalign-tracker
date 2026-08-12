@@ -1,13 +1,15 @@
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Theme } from '../utils/theme';
 
 interface AlarmPopoverProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (delayMinutes: number) => void;
+  onCancelAlarm?: () => void;
   thresholdMinutes: number;
   colors: Theme['colors'];
+  editMode?: boolean;
 }
 
 const PRESET_DELAYS = [
@@ -19,12 +21,24 @@ const PRESET_DELAYS = [
   { label: 'No alarm', value: 0 },
 ];
 
-export function AlarmPopover({ visible, onClose, onConfirm, thresholdMinutes, colors }: AlarmPopoverProps) {
+export function AlarmPopover({ visible, onClose, onConfirm, onCancelAlarm, thresholdMinutes, colors, editMode = false }: AlarmPopoverProps) {
   const defaultPreset = PRESET_DELAYS.find(d => d.value === thresholdMinutes) ?? PRESET_DELAYS[2];
   const [selected, setSelected] = useState(defaultPreset.value);
 
+  // Reset selection when popover opens
+  useEffect(() => {
+    if (visible) {
+      setSelected(editMode ? thresholdMinutes : (PRESET_DELAYS.find(d => d.value === thresholdMinutes)?.value ?? 45));
+    }
+  }, [visible, editMode, thresholdMinutes]);
+
   const handleConfirm = () => {
     onConfirm(selected);
+    onClose();
+  };
+
+  const handleCancelAlarm = () => {
+    onCancelAlarm?.();
     onClose();
   };
 
@@ -32,9 +46,13 @@ export function AlarmPopover({ visible, onClose, onConfirm, thresholdMinutes, co
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <View style={[styles.content, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.title, { color: colors.text }]}>⏰ Set Alarm</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {editMode ? '⏰ Adjust Alarm' : '⏰ Set Alarm'}
+          </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            How long until we remind you to put trays back in?
+            {editMode
+              ? 'Adjust or cancel the put-back-in reminder'
+              : 'How long until we remind you to put trays back in?'}
           </Text>
 
           <View style={styles.options}>
@@ -59,8 +77,13 @@ export function AlarmPopover({ visible, onClose, onConfirm, thresholdMinutes, co
 
           <View style={styles.buttons}>
             <TouchableOpacity style={[styles.btn, { borderColor: colors.inputBorder }]} onPress={onClose}>
-              <Text style={[styles.btnText, { color: colors.textSecondary }]}>Cancel</Text>
+              <Text style={[styles.btnText, { color: colors.textSecondary }]}>Dismiss</Text>
             </TouchableOpacity>
+            {editMode && onCancelAlarm && (
+              <TouchableOpacity style={[styles.btn, { borderColor: colors.danger }]} onPress={handleCancelAlarm}>
+                <Text style={[styles.btnText, { color: colors.danger }]}>Cancel Alarm</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={handleConfirm}>
               <Text style={styles.btnTextWhite}>Confirm</Text>
             </TouchableOpacity>
@@ -79,8 +102,8 @@ const styles = StyleSheet.create({
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   option: { borderWidth: 1.5, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16 },
   optionText: { fontSize: 16, fontWeight: '600' },
-  buttons: { flexDirection: 'row', gap: 12 },
-  btn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  buttons: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  btn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center', minWidth: 100 },
   btnText: { fontSize: 16, fontWeight: '600' },
   btnTextWhite: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

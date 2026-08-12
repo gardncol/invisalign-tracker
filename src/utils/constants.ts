@@ -13,7 +13,7 @@ export const COMMON_CHANGE_FREQUENCIES = [7, 10, 14];
 
 export const NOTIFICATION_IDS = {
   TRAY_CHANGE: 'tray-change-reminder',
-  ALARM_THRESHOLD: 'alarm-threshold',
+  ALARM_THRESHOLD: 'put-back-in-alarm',
   ALARM_ESCALATION: 'alarm-escalation',
   ALARM_GOAL_RISK: 'alarm-goal-risk',
   OVERNIGHT_PROMPT: 'overnight-prompt',
