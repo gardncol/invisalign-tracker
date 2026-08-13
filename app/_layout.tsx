@@ -2,7 +2,7 @@ import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { useEffect } from 'react';
 import { useUserStore } from '../src/stores/useUserStore';
 import { initializeDatabase } from '../src/db/client';
-import { configureNotificationHandler, scheduleTrayChangeReminder, schedulePutBackInAlarm } from '../src/services/notifications';
+import { configureNotificationHandler, scheduleTrayChangeReminder, schedulePutBackInAlarm, setupAndroidNotificationChannel } from '../src/services/notifications';
 import { calculateNextChangeDateWithDay } from '../src/services/trayScheduler';
 import { getCurrentTrayRecord } from '../src/db/repositories/trayRepo';
 import { getLatestEvent, getEventsForDate } from '../src/db/repositories/eventRepo';
@@ -26,6 +26,9 @@ export default function RootLayout() {
       await initializeDatabase();
       await loadUser();
       configureNotificationHandler();
+      // Set up the Android notification channel with HIGH importance so
+      // notifications show as heads-up banners even when the app is open.
+      await setupAndroidNotificationChannel();
     })();
   }, []);
 

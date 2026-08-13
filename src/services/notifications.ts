@@ -14,6 +14,32 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 }
 
 /**
+ * Set up the Android notification channel with HIGH importance so that
+ * notifications are displayed as heads-up banners even when the app is
+ * in the foreground. Without a HIGH-importance channel, Android silently
+ * drops or minimises foreground notifications.
+ *
+ * This is safe to call on iOS (it's a no-op on platforms that don't
+ * support channels).
+ */
+export async function setupAndroidNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  await Notifications.setNotificationChannelAsync('tray-reminders', {
+    name: 'Tray Reminders',
+    importance: Notifications.AndroidImportance.HIGH,
+    bypassDnd: false,
+    description: 'Reminders to change trays and put them back in',
+    lightColor: '#007AFF',
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    showBadge: true,
+    enableVibrate: true,
+    enableLights: true,
+    sound: 'default',
+  });
+}
+
+/**
  * Schedule a tray change reminder.
  * Uses the actual last-change date to implement day drift.
  */
@@ -38,6 +64,7 @@ export async function scheduleTrayChangeReminder(
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: trigger,
+      channelId: 'tray-reminders',
     },
     // Use a fixed identifier so cancelNotification() can reliably target it.
     identifier: NOTIFICATION_IDS.TRAY_CHANGE,
@@ -78,6 +105,7 @@ export async function schedulePutBackInAlarm(
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: fireAt,
+      channelId: 'tray-reminders',
     },
     // Use a fixed identifier so cancelPutBackInAlarm() can reliably cancel it.
     // Without this, expo-notifications assigns a random UUID and the cancel
@@ -119,6 +147,9 @@ export async function getScheduledNotifications(): Promise<Notifications.Notific
 
 /**
  * Configure notification handler for foreground notifications.
+ * On Android, `shouldShowBanner: true` combined with a HIGH-importance
+ * notification channel ensures that notifications are displayed as
+ * heads-up banners even when the app is in the foreground.
  */
 export function configureNotificationHandler(): void {
   Notifications.setNotificationHandler({

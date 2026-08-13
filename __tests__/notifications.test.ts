@@ -12,9 +12,12 @@ import * as Notifications from 'expo-notifications';
 // Mock expo-notifications
 const mockSchedule = jest.fn().mockResolvedValue('mock-id');
 const mockCancel = jest.fn().mockResolvedValue(undefined);
+const mockSetChannel = jest.fn().mockResolvedValue(null);
 jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { DATE: 'date' },
-  AndroidNotificationPriority: { HIGH: 4 },
+  AndroidNotificationPriority: { HIGH: 'high' },
+  AndroidImportance: { HIGH: 6 },
+  AndroidNotificationVisibility: { PUBLIC: 1 },
   scheduleNotificationAsync: (...args: unknown[]) => mockSchedule(...args),
   cancelScheduledNotificationAsync: (...args: unknown[]) => mockCancel(...args),
   cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(undefined),
@@ -22,6 +25,7 @@ jest.mock('expo-notifications', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
   getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
   setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: (...args: unknown[]) => mockSetChannel(...args),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
@@ -57,5 +61,30 @@ describe('Alarm cancellation (issue #1)', () => {
     expect(mockSchedule).toHaveBeenCalledTimes(1);
     const args = mockSchedule.mock.calls[0][0];
     expect(args.identifier).toBe(NOTIFICATION_IDS.TRAY_CHANGE);
+  });
+});
+
+describe('Foreground notifications (issue #7)', () => {
+  beforeEach(() => {
+    mockSchedule.mockClear();
+    mockSetChannel.mockClear();
+  });
+
+  it('schedulePutBackInAlarm uses the tray-reminders channel', async () => {
+    const fireAt = new Date(Date.now() + 15 * 60 * 1000);
+    await schedulePutBackInAlarm(fireAt, 'gentle', 15);
+
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    const args = mockSchedule.mock.calls[0][0];
+    expect(args.trigger.channelId).toBe('tray-reminders');
+  });
+
+  it('scheduleTrayChangeReminder uses the tray-reminders channel', async () => {
+    const nextChange = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await scheduleTrayChangeReminder(nextChange, 5, '22:00');
+
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    const args = mockSchedule.mock.calls[0][0];
+    expect(args.trigger.channelId).toBe('tray-reminders');
   });
 });

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEventStore } from '../../src/stores/useEventStore';
@@ -25,6 +25,8 @@ export default function TimelineScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState<EventType>('in');
   const [addTime, setAddTime] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [addTrayNumber, setAddTrayNumber] = useState('');
 
   const loadEvents = useCallback(async (date: Date) => {
     setLoading(true);
@@ -66,9 +68,24 @@ export default function TimelineScreen() {
   const handleAddEvent = async () => {
     const eventDate = new Date(selectedDate);
     eventDate.setHours(addTime.getHours(), addTime.getMinutes(), 0, 0);
-    await addEvent(addType, eventDate);
+    if (addType === 'tray_change') {
+      const trayNum = parseInt(addTrayNumber) || (user ? user.currentTray : 1);
+      await addEvent('tray_change', eventDate, trayNum);
+    } else {
+      await addEvent(addType, eventDate);
+    }
     setShowAddModal(false);
+    setShowTimePicker(false);
+    setAddTrayNumber('');
     loadEvents(selectedDate);
+  };
+
+  const openAddModal = () => {
+    setAddTime(new Date());
+    setAddType('in');
+    setShowTimePicker(false);
+    setAddTrayNumber('');
+    setShowAddModal(true);
   };
 
   const goPrevDay = () => setSelectedDate(subDays(selectedDate, 1));
@@ -98,10 +115,7 @@ export default function TimelineScreen() {
         )}
         <TouchableOpacity
           style={[styles.addBtn, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            setAddTime(new Date());
-            setShowAddModal(true);
-          }}
+          onPress={openAddModal}
         >
           <Ionicons name="add" size={24} color="#fff" />
           <Text style={styles.addBtnText}>Add Event</Text>
@@ -156,20 +170,54 @@ export default function TimelineScreen() {
               >
                 <Text style={[styles.typeText, { color: addType === 'out' ? colors.danger : colors.textSecondary }]}>📤 Trays Out</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.typeOption, { borderColor: addType === 'tray_change' ? colors.primary : colors.inputBorder }, addType === 'tray_change' && { backgroundColor: colors.primary + '15' }]}
+                onPress={() => setAddType('tray_change')}
+              >
+                <Text style={[styles.typeText, { color: addType === 'tray_change' ? colors.primary : colors.textSecondary }]}>🦷 Change Tray</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={[styles.modalHint, { color: colors.textTertiary }]}>Select time</Text>
-            <DateTimePicker
-              value={addTime}
-              mode="time"
-              display="spinner"
-              onChange={(e, selected) => { if (selected) setAddTime(selected); }}
-              textColor={colors.text}
-              style={{ alignSelf: 'center', width: '100%', marginBottom: 16 }}
-            />
+            {/* Tray number input — only shown for tray_change events */}
+            {addType === 'tray_change' && (
+              <View style={styles.trayNumberSection}>
+                <Text style={[styles.modalHint, { color: colors.textTertiary }]}>Tray number</Text>
+                <TextInput
+                  style={[styles.trayNumberInput, { borderColor: colors.inputBorder, color: colors.text, backgroundColor: colors.background }]}
+                  keyboardType="numeric"
+                  value={addTrayNumber}
+                  onChangeText={setAddTrayNumber}
+                  placeholder={String(user?.currentTray ?? 1)}
+                  placeholderTextColor={colors.textTertiary}
+                />
+              </View>
+            )}
+
+            {/* Time selector — collapsed by default, tap to reveal */}
+            <TouchableOpacity
+              style={[styles.timeSelectorBtn, { borderColor: colors.inputBorder, backgroundColor: colors.background }]}
+              onPress={() => setShowTimePicker(!showTimePicker)}
+            >
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={[styles.timeSelectorText, { color: colors.text }]}>
+                {format(addTime, 'h:mm a')}
+              </Text>
+              <Ionicons name={showTimePicker ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={addTime}
+                mode="time"
+                display="spinner"
+                onChange={(e, selected) => { if (selected) setAddTime(selected); }}
+                textColor={colors.text}
+                style={{ alignSelf: 'center', width: '100%', marginBottom: 16 }}
+              />
+            )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.inputBorder }]} onPress={() => setShowAddModal(false)}>
+              <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.inputBorder }]} onPress={() => { setShowAddModal(false); setShowTimePicker(false); }}>
                 <Text style={[styles.modalBtnText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleAddEvent}>
@@ -201,9 +249,13 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
   modalLabel: { fontSize: 16, marginBottom: 16 },
   modalHint: { fontSize: 14, marginBottom: 8 },
-  typeRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  typeOption: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  typeText: { fontSize: 16, fontWeight: '600' },
+  typeRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
+  typeOption: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, alignItems: 'center', minWidth: 100 },
+  typeText: { fontSize: 14, fontWeight: '600' },
+  trayNumberSection: { marginBottom: 16 },
+  trayNumberInput: { fontSize: 16, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  timeSelectorBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 16 },
+  timeSelectorText: { fontSize: 16, fontWeight: '600', flex: 1, marginLeft: 8 },
   modalButtons: { flexDirection: 'row', gap: 12 },
   modalBtn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   modalBtnText: { fontSize: 16, fontWeight: '600' },
